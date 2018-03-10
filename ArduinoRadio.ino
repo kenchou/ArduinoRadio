@@ -70,7 +70,7 @@ RADIO_FREQ preset[] = {
   10170,  // 动感101
   10250,  // 中国国际广播电台环球资讯广播
   10370,  // Love
-  10570,  // 上海交通广播
+  10571,  // 上海交通广播
   10650,  // 浦东广播106.5
   10720,  // 上海故事广播
   10770,  // 中央人民广播电台音乐之声
@@ -103,7 +103,7 @@ TEA5767  radio;    // Create an instance of a TEA5767 chip radio.
 /// When using a I2C->LCD library ??? the I2C bus can be used to control then radio chip and the lcd. 
 
 /// get a LCD instance
-LiquidCrystal_PCF8574 lcd(0x27);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_PCF8574 lcd(0x3F);  // set the LCD address to 0x3F for a 16 chars and 2 line display
 
 OneButton menuButton(A6, true);
 OneButton seekButton(A7, true);
@@ -261,7 +261,7 @@ ISR(PCINT2_vect) {
 /// Setup a FM only radio configuration with I/O for commands and debugging on the Serial port.
 void setup() {
   // open the Serial port
-  Serial.begin(57600);
+  Serial.begin(115200);
 
   // Initialize the lcd
   lcd.begin(16, 2);
