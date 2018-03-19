@@ -77,8 +77,8 @@ RADIO_FREQ preset[] = {
 };
 // , 10650,10650,10800
 
-int    i_sidx=14;        // Start at Station with index=5
-int    i_smax=18;       // Max Index of Stations
+int    i_sidx=12;        // Start at Station with index=5
+int    i_smax=sizeof(preset) / sizeof(RADIO_FREQ)-1;       // Max Index of Stations
 
 /// Setup a RoraryEncoder for pins A2 and A3:
 RotaryEncoder encoder(A2, A3);
@@ -105,9 +105,10 @@ TEA5767  radio;    // Create an instance of a TEA5767 chip radio.
 /// get a LCD instance
 LiquidCrystal_PCF8574 lcd(0x3F);  // set the LCD address to 0x3F for a 16 chars and 2 line display
 
-OneButton menuButton(A6, true);
-OneButton seekButton(A7, true);
-
+OneButton menuButton(4, true);
+OneButton seekButton(5, true);
+OneButton prevButton(6, true);
+OneButton nextButton(7, true);
 
 /// get a RDS parser
 RDSParser rds;
@@ -244,9 +245,34 @@ void doMenuClick() {
 // this function will be called when the seekButton was clicked
 void doSeekClick() {
   Serial.println("SEEK...");
+  lcd.setCursor(0, 1);
+  lcd.print("SEEK...");
   radio.seekUp(true);
 } // doSeekClick()
 
+void prevButtonOnClick()
+{
+  Serial.print("Prev Button Click.");
+    // previous preset
+    if (i_sidx > 0) {
+      i_sidx--;
+    } else {
+      i_sidx = i_smax;
+    }
+    radio.setFrequency(preset[i_sidx]);
+}
+
+void nextButtonOnClick()
+{
+  Serial.print("Next Button Click.");
+    // next preset
+    if (i_sidx < i_smax) {
+      i_sidx++;
+    } else {
+      i_sidx = 0;
+    }
+      radio.setFrequency(preset[i_sidx]);
+}
 
 // The Interrupt Service Routine for Pin Change Interrupts
 // On Arduino UNO you can use the PCINT1 interrupt vector that covers digital value changes on A2 and A3.
@@ -260,19 +286,24 @@ ISR(PCINT2_vect) {
 
 /// Setup a FM only radio configuration with I/O for commands and debugging on the Serial port.
 void setup() {
+  pinMode(13, OUTPUT);  // power on led
+  digitalWrite(13, HIGH);
   // open the Serial port
   Serial.begin(115200);
 
   // Initialize the lcd
-  lcd.begin(16, 2);
   lcd.setBacklight(1);
-  lcd.print("Radio...");
+  lcd.begin(16, 2);
+  lcd.print("Arduino FM Radio");
+  lcd.setCursor(0, 1);
+  lcd.print("Startup...");
   
-  delay(800);
-  lcd.clear();
-
   // Initialize the Radio 
   radio.init();
+
+  delay(1000);
+  lcd.clear();
+  lcd.setCursor(0, 0);
 
   // Enable information to the Serial port
   radio.debugEnable();
@@ -302,6 +333,9 @@ void setup() {
 
   // link the doSeekClick function to be called on a click event.
   seekButton.attachClick(doSeekClick);
+
+  prevButton.attachClick(prevButtonOnClick);
+  nextButton.attachClick(nextButtonOnClick);
 
   delay(100);
 
@@ -442,6 +476,9 @@ void loop() {
   
   // check for the menuButton
   menuButton.tick();
+  seekButton.tick();
+  prevButton.tick();
+  nextButton.tick();
 
   if (Serial.available() > 0) {
     // read the next char from input.
@@ -473,47 +510,6 @@ void loop() {
       } // if
     } // if
   } // if
-
-
-//  // check for the rotary encoder
-//  newPos = encoder.getPosition();
-//  if (newPos != encoderLastPos) {
-//
-//    if (rot_state == STATE_FREQ) {
-//      RADIO_FREQ f = radio.getMinFrequency() + (newPos *  radio.getFrequencyStep());
-//      radio.setFrequency(f);
-//      encoderLastPos = newPos;
-//      nextFreqTime = now + 10;
-//    
-//    }      
-//    else if (rot_state == STATE_VOL) {
-//      radio.setVolume(newPos);
-//      encoderLastPos = newPos;
-//      DisplayVolume(newPos);
-//      
-//    }
-//    else if (rot_state == STATE_MONO) {
-//      radio.setMono(newPos & 0x01);
-//      encoderLastPos = newPos;
-//      DisplayMono(newPos & 0x01);
-//
-//    }
-//    else if (rot_state == STATE_SMUTE) {
-//      radio.setSoftMute(newPos & 0x01);
-//      encoderLastPos = newPos;
-//      DisplaySoftMute(newPos & 0x01);
-//
-//    } // if
-//    encoderLastTime = now;
-//        
-//  }
-//  else if (now > encoderLastTime + 2000) {
-//    // fall into FREQ + RDS mode
-//    rot_state = STATE_FREQ;
-//    encoderLastPos = (radio.getFrequency() - radio.getMinFrequency()) / radio.getFrequencyStep();
-//    encoder.setPosition(encoderLastPos);
-//
-//  } // if
 
   // check for RDS data
   radio.checkRDS();
